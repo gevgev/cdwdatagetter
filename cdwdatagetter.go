@@ -148,7 +148,9 @@ func main() {
 			log.Printf(*key.Key)
 			if strings.Contains(*key.Key, prefix+date) {
 				log.Println("Downloading: ", *key.Key)
-				downloaded += downloadFile(*key.Key)
+				if downloadFile(*key.Key) {
+					downloaded++
+				}
 			}
 		}
 
@@ -162,18 +164,18 @@ func createPath(path string) error {
 	return err
 }
 
-func downloadFile(filename string) int {
+func downloadFile(filename string) bool {
 
 	err := createPath(filename)
 	if err != nil {
 		log.Println("Could not create folder: ", filepath.Dir(filename))
-		return 0
+		return false
 	}
 
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Println("Failed to create file: ", err)
-		return 0
+		return false
 	}
 
 	defer file.Close()
@@ -188,9 +190,9 @@ func downloadFile(filename string) int {
 
 	if err != nil {
 		log.Printf("Failed to download file: %s, Error: %s ", filename, err)
-		return 0
+		return false
 	}
 
 	log.Println("Downloaded file ", file.Name(), numBytes, " bytes")
-	return 1
+	return true
 }
