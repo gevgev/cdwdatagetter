@@ -146,10 +146,8 @@ for provider in "${arr[@]}"
 
 
             gunzip -f ${file}
-            # TODO - the line below wil not work as it looks for the original *.cod.bz file, 
-            # TODO - while gzip delets the original *.cod.bz, and creates *.cod file
             # replace all Control A with Diamnonds
-            cat -v "${file/.bz2/}" | sed 's/\^A/<>/g' > $data_download_destination/$diamonds_delimited_filename
+            cat -v "${file/.bz2/}" | LANG=C sed 's/\^A/<>/g' > $data_download_destination/$diamonds_delimited_filename
 
             # create the subdirectory structure for today run and make it writeable
             mkdir $output_files_dir/$as_of;

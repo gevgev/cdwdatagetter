@@ -8,3 +8,4 @@ event/*.*
 *.cod
 *.cod.bz2
 cdw-data-reports/
+test-array.sh
