@@ -107,6 +107,8 @@ func formatPrefix(path, msoCode string) string {
 }
 
 func main() {
+	startTime := time.Now()
+	downloaded := 0
 
 	if verbose {
 		PrintParams()
@@ -142,11 +144,13 @@ func main() {
 			log.Printf(*key.Key)
 			if strings.Contains(*key.Key, prefix+date) {
 				log.Println("Downloading: ", *key.Key)
-				downloadFile(*key.Key)
+				downloaded += downloadFile(*key.Key)
 			}
 		}
 
 	}
+
+	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloaded, time.Since(startTime))
 }
 
 func createPath(path string) error {
@@ -154,18 +158,18 @@ func createPath(path string) error {
 	return err
 }
 
-func downloadFile(filename string) {
+func downloadFile(filename string) int {
 
 	err := createPath(filename)
 	if err != nil {
 		log.Println("Could not create folder: ", filepath.Dir(filename))
-		return
+		return 0
 	}
 
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Println("Failed to create file: ", err)
-		return
+		return 0
 	}
 
 	defer file.Close()
@@ -180,8 +184,9 @@ func downloadFile(filename string) {
 
 	if err != nil {
 		log.Printf("Failed to download file: %s, Error: %s ", filename, err)
-		return
+		return 0
 	}
 
 	log.Println("Downloaded file ", file.Name(), numBytes, " bytes")
+	return 1
 }
