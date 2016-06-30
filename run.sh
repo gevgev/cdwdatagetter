@@ -1,7 +1,7 @@
 #!/bin/sh
 set -x
 
-if [ "$#" -ne 9 -a "$#" -ne 10 ]; then
+if [ "$#" -ne 10 -a "$#" -ne 11 ]; then
     echo "Error: Missing parameters:"
     echo "  AWS_access_key"
     echo "  AWS_access_secret"
@@ -12,6 +12,8 @@ if [ "$#" -ne 9 -a "$#" -ne 10 ]; then
     echo "  output_files_dir"
     echo "  diamonds_delimited_filename"
     echo "  base_folder for cdw-s3-structure/rovi-cdw/event/tv_viewership/<provider>/delta"
+    echo "  mso list"
+    echo "  date (optional). Format:yyyyMMdd, example: 20160630"
     exit 1
 fi
 
@@ -21,9 +23,6 @@ access_secret=$2
 
 bucket=$3 
 #/rovi-cdw
-
-#date the script run
-as_of=`date +"%Y%m%d"`
 
 # tracker log to keep info of previously processed files
 data_downloader_activity_tracker_file=$4 
@@ -52,6 +51,16 @@ diamonds_delimited_filename=$8
 base_folder=$9
 # "event/tv_viewership"
 
+mso_list=${10}
+
+
+#date the script run
+if [ "$#" == 11 ]; then
+    as_of=${11}
+else
+    as_of=`date +"%Y%m%d"`
+fi 
+
 #sp providers are listed as codes: 
 #8000200  (blueridge palmerton)
 #8000150  (panhandle guymon)
@@ -78,12 +87,35 @@ fi
 # 8000200, Blueridge-Palmerton
 # 4000050, MidCo
 
-declare -a arr=("8000150" "4000002")
+#declare -a arr=("8000150" "4000002")
 
+N=0
+arr=()
+
+IFS=","
+
+while read STR
+do
+        set -- "$STR"
+
+        while [ "$#" -gt 0 ]
+        do
+                arr[$N]="${1%,*}"
+                ((N++))
+                shift
+        done
+done < "$mso_list"
+
+for provider in "${ARR[@]}"
+    do 
+        echo "$provider" 
+        echo "${provider%,*}"
+
+done
  
 
 # Run the aws s3 data getter 
-AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$access_secret" ./cdwdatagetter -r us-east-1 -b "$bucket" -d "$as_of" -p "$base_folder"
+AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$access_secret" ./cdwdatagetter -r us-east-1 -b "$bucket" -d "$as_of" -p "$base_folder" -m "$mso_list"
 
 for provider in "${arr[@]}"
     do
