@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -137,7 +138,9 @@ func main() {
 		log.Println("Files:")
 		for _, key := range resp.Contents {
 			log.Printf(*key.Key)
-			//			log.Println("Downloading: ", file)
+			if strings.Contains(*key.Key, prefix+date) {
+				log.Println("Downloading: ", *key.Key)
+			}
 		}
 
 	}
