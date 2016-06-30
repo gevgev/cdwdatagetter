@@ -87,8 +87,6 @@ fi
 # 8000200, Blueridge-Palmerton
 # 4000050, MidCo
 
-#declare -a arr=("8000150" "4000002")
-
 N=0
 arr=()
 
@@ -106,13 +104,6 @@ do
         done
 done < "$mso_list"
 
-for provider in "${ARR[@]}"
-    do 
-        echo "$provider" 
-        echo "${provider%,*}"
-
-done
- 
 
 # Run the aws s3 data getter 
 AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$access_secret" ./cdwdatagetter -r us-east-1 -b "$bucket" -d "$as_of" -p "$base_folder" -m "$mso_list"
