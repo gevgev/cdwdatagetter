@@ -4,3 +4,6 @@
 tmp/
 cdwdatagetter
 test/*.*
+event/*.*
+*.cod
+*.cod.bz2

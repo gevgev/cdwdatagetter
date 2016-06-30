@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 func formatDefaultDate() string {
@@ -140,16 +142,46 @@ func main() {
 			log.Printf(*key.Key)
 			if strings.Contains(*key.Key, prefix+date) {
 				log.Println("Downloading: ", *key.Key)
+				downloadFile(*key.Key)
 			}
 		}
 
 	}
 }
 
-func filterObjectsByDate(date string) []string {
+func createPath(path string) error {
+	err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	return err
+}
 
-	filteredFileNames := []string{}
+func downloadFile(filename string) {
 
-	return filteredFileNames
+	err := createPath(filename)
+	if err != nil {
+		log.Println("Could not create folder: ", filepath.Dir(filename))
+		return
+	}
 
+	file, err := os.Create(filename)
+	if err != nil {
+		log.Println("Failed to create file: ", err)
+		return
+	}
+
+	defer file.Close()
+
+	downloader := s3manager.NewDownloader(session.New(&aws.Config{Region: aws.String(regionName)}))
+
+	numBytes, err := downloader.Download(file,
+		&s3.GetObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(filename),
+		})
+
+	if err != nil {
+		log.Printf("Failed to download file: %s, Error: %s ", filename, err)
+		return
+	}
+
+	log.Println("Downloaded file ", file.Name(), numBytes, " bytes")
 }
