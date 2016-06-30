@@ -31,6 +31,7 @@ var (
 	bucketName      string
 	date            string
 	msoListFilename string
+	prefixPath      string
 
 	verbose bool
 	appName string
@@ -42,6 +43,7 @@ func init() {
 	flagBucket := flag.String("b", "rovi-cdw", "`Bucket name`")
 	flagDate := flag.String("d", formatDefaultDate(), "`Date`")
 	flagMsoFileName := flag.String("m", "mso-list.csv", "Filename for `MSO` list")
+	flagPrefixPath := flag.String("p", "event/tv_viewership", "`Prefix path` in the bucket")
 	flagVerbose := flag.Bool("v", true, "`Verbose`: outputs to the screen")
 
 	flag.Parse()
@@ -50,6 +52,7 @@ func init() {
 		bucketName = *flagBucket
 		date = *flagDate
 		msoListFilename = *flagMsoFileName
+		prefixPath = *flagPrefixPath
 		verbose = *flagVerbose
 		appName = os.Args[0]
 	} else {
@@ -61,17 +64,18 @@ func init() {
 func usage() {
 	fmt.Printf("%s, ver. %s\n", appName, version)
 	fmt.Println("Command line:")
-	fmt.Printf("\tprompt$>%s -r <aws_region> -b <s3_bucket_name> -d <date> -m <mso-list-file-name>\n", appName)
+	fmt.Printf("\tprompt$>%s -r <aws_region> -b <s3_bucket_name> -p <bucket_key_path> -d <date> -m <mso-list-file-name>\n", appName)
 	flag.Usage()
 	os.Exit(-1)
 }
 
 func PrintParams() {
-	log.Printf("Provided: -r: %s, -b: %s, -d: %v, -m %s, -v: %v\n",
+	log.Printf("Provided: -r: %s, -b: %s, -d: %v, -m %s, -p %s, -v: %v\n",
 		regionName,
 		bucketName,
 		date,
 		msoListFilename,
+		prefixPath,
 		verbose,
 	)
 
@@ -123,7 +127,7 @@ func main() {
 	msoList := getMsoNamesList()
 
 	for _, mso := range msoList {
-		prefix := formatPrefix("event/tv_viewership", mso.Code)
+		prefix := formatPrefix(prefixPath, mso.Code)
 		if verbose {
 			log.Println("Prefix: ", prefix)
 		}
