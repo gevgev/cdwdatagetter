@@ -1,0 +1,7 @@
+*.txt
+*.log
+*.csv
+*.zip
+tmp/
+cdwdatagetter
+test/*.*
