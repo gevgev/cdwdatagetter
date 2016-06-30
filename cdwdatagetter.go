@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,7 +24,8 @@ func formatDefaultDate() string {
 }
 
 const (
-	version = "0.1"
+	version     = "0.1"
+	MAXATTEMPTS = 3
 )
 
 var (
@@ -32,6 +34,7 @@ var (
 	date            string
 	msoListFilename string
 	prefixPath      string
+	maxAttempts     int
 
 	verbose bool
 	appName string
@@ -44,6 +47,8 @@ func init() {
 	flagDate := flag.String("d", formatDefaultDate(), "`Date`")
 	flagMsoFileName := flag.String("m", "mso-list.csv", "Filename for `MSO` list")
 	flagPrefixPath := flag.String("p", "event/tv_viewership", "`Prefix path` in the bucket")
+	flagMaxAttempts := flag.Int("M", MAXATTEMPTS, "`Max attempts` to retry download from aws.s3")
+
 	flagVerbose := flag.Bool("v", true, "`Verbose`: outputs to the screen")
 
 	flag.Parse()
@@ -53,6 +58,8 @@ func init() {
 		date = *flagDate
 		msoListFilename = *flagMsoFileName
 		prefixPath = *flagPrefixPath
+		maxAttempts = *flagMaxAttempts
+
 		verbose = *flagVerbose
 		appName = os.Args[0]
 	} else {
@@ -64,18 +71,19 @@ func init() {
 func usage() {
 	fmt.Printf("%s, ver. %s\n", appName, version)
 	fmt.Println("Command line:")
-	fmt.Printf("\tprompt$>%s -r <aws_region> -b <s3_bucket_name> -p <bucket_key_path> -d <date> -m <mso-list-file-name>\n", appName)
+	fmt.Printf("\tprompt$>%s -r <aws_region> -b <s3_bucket_name> -p <bucket_key_path> -d <date> -m <mso-list-file-name> -M <max_retry>\n", appName)
 	flag.Usage()
 	os.Exit(-1)
 }
 
 func PrintParams() {
-	log.Printf("Provided: -r: %s, -b: %s, -d: %v, -m %s, -p %s, -v: %v\n",
+	log.Printf("Provided: -r: %s, -b: %s, -d: %v, -m %s, -p %s, -M %d, -v: %v\n",
 		regionName,
 		bucketName,
 		date,
 		msoListFilename,
 		prefixPath,
+		maxAttempts,
 		verbose,
 	)
 
@@ -110,9 +118,41 @@ func formatPrefix(path, msoCode string) string {
 	return fmt.Sprintf("%s/%s/delta/", path, msoCode)
 }
 
+var failedFilesChan chan string
+var downloadedReportChannel chan bool
+
 func main() {
 	startTime := time.Now()
 	downloaded := 0
+	failedFilesChan = make(chan string)
+	downloadedReportChannel = make(chan bool)
+
+	failedFilesList := []string{}
+	var wg sync.WaitGroup
+
+	// Listening to failed reports
+	go func() {
+		for {
+			key, more := <-failedFilesChan
+			if more {
+				failedFilesList = append(failedFilesList, key)
+			} else {
+				return
+			}
+		}
+	}()
+
+	// listening to succeeded reports
+	go func() {
+		for {
+			_, more := <-downloadedReportChannel
+			if more {
+				downloaded++
+			} else {
+				return
+			}
+		}
+	}()
 
 	if verbose {
 		PrintParams()
@@ -147,16 +187,54 @@ func main() {
 		for _, key := range resp.Contents {
 			log.Printf(*key.Key)
 			if strings.Contains(*key.Key, prefix+date) {
-				log.Println("Downloading: ", *key.Key)
-				if downloadFile(*key.Key) {
-					downloaded++
-				}
+				wg.Add(1)
+				go processSingleDownload(*key.Key, &wg)
 			}
 		}
 
 	}
 
+	if verbose {
+		log.Println("All files sent to be downloaded. Waiting for completetion...")
+	}
+	wg.Wait()
+	if verbose {
+		log.Println("All download jobs completed, closing failed/succeeded jobs channel")
+	}
+	close(failedFilesChan)
+	close(downloadedReportChannel)
+	ReportFailedFiles(failedFilesList)
 	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloaded, time.Since(startTime))
+}
+
+func ReportFailedFiles(failedFilesList []string) {
+	if len(failedFilesList) > 0 {
+		for _, key := range failedFilesList {
+			log.Println("Failed downloading: ", key)
+		}
+	} else {
+		log.Println("No failed downloads")
+	}
+}
+
+func processSingleDownload(key string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i := 0; i < maxAttempts; i++ {
+		log.Println("Downloading: ", key)
+		if downloadFile(key) {
+			if verbose {
+				log.Println("Successfully downloaded: ", key)
+			}
+			downloadedReportChannel <- true
+			return
+		} else {
+			if verbose {
+				log.Println("Failed, going to sleep for: ", key)
+			}
+			time.Sleep(time.Duration(10) * time.Second)
+		}
+	}
+	failedFilesChan <- key
 }
 
 func createPath(path string) error {
