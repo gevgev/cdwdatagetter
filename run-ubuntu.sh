@@ -113,7 +113,7 @@ for provider in "${arr[@]}"
     do
     
     # get the latest file in the latest subdirectory for that provider
-    for file in `ls -lad $base_folder/$provider/delta/*/* | awk -F ' '  ' { print $10 } ' | sort -r | head -1 `
+    for file in `ls -lad $base_folder/$provider/delta/*/* | awk -F ' '  ' { print $9 } ' | sort -r | head -1 `
         do  
 
             # check if file has been pulled before then don't not process
@@ -137,7 +137,7 @@ for provider in "${arr[@]}"
             # need to give the new path to the downloaded file
 
 
-            gunzip -f ${file}
+            bunzip2 -f ${file}
             # replace all Control A with Diamnonds
             cat -v "${file/.bz2/}" | LANG=C sed 's/\^A/<>/g' > $data_download_destination/$diamonds_delimited_filename
 

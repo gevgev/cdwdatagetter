@@ -125,10 +125,6 @@ for provider in "${arr[@]}"
             echo " $(date). Getting file ${file}" >> $data_downloader_status_log_dir/cdw-data-downloader.log
             echo " $(date). Getting file ${file}"
 
-            # bring the raw compressed file into the desired location.  Not sure if this is the correct awscli command
-            # currently I brought the file to a local directories structure similar to the remote one on bucket rovi-cdw
-            #aws s3 cp  ${file} $data_download_destination/
-
             # add the entry to the tracker and date
             echo " $(date)   ${file}" >>  $data_downloader_activity_tracker_file;
 
