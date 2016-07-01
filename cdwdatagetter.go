@@ -35,6 +35,7 @@ var (
 	msoListFilename string
 	prefixPath      string
 	maxAttempts     int
+	concurrency     int
 
 	verbose bool
 	appName string
@@ -48,6 +49,7 @@ func init() {
 	flagMsoFileName := flag.String("m", "mso-list.csv", "Filename for `MSO` list")
 	flagPrefixPath := flag.String("p", "event/tv_viewership", "`Prefix path` in the bucket")
 	flagMaxAttempts := flag.Int("M", MAXATTEMPTS, "`Max attempts` to retry download from aws.s3")
+	flagConcurrency := flag.Int("c", 10, "The number of files to process `concurrent`ly")
 
 	flagVerbose := flag.Bool("v", true, "`Verbose`: outputs to the screen")
 
@@ -59,6 +61,7 @@ func init() {
 		msoListFilename = *flagMsoFileName
 		prefixPath = *flagPrefixPath
 		maxAttempts = *flagMaxAttempts
+		concurrency = *flagConcurrency
 
 		verbose = *flagVerbose
 		appName = os.Args[0]
@@ -118,12 +121,20 @@ func formatPrefix(path, msoCode string) string {
 	return fmt.Sprintf("%s/%s/delta/", path, msoCode)
 }
 
-var failedFilesChan chan string
-var downloadedReportChannel chan bool
+var (
+	failedFilesChan         chan string
+	downloadedReportChannel chan bool
+	dwnldMu                 sync.Mutex
+)
 
 func main() {
 	startTime := time.Now()
+
+	// This is our semaphore/pool
+	sem := make(chan bool, concurrency)
+
 	downloaded := 0
+
 	failedFilesChan = make(chan string)
 	downloadedReportChannel = make(chan bool)
 
@@ -147,7 +158,9 @@ func main() {
 		for {
 			_, more := <-downloadedReportChannel
 			if more {
+				dwnldMu.Lock()
 				downloaded++
+				dwnldMu.Unlock()
 			} else {
 				return
 			}
@@ -167,6 +180,7 @@ func main() {
 	msoList := getMsoNamesList()
 
 	for _, mso := range msoList {
+
 		prefix := formatPrefix(prefixPath, mso.Code)
 		if verbose {
 			log.Println("Prefix: ", prefix)
@@ -187,8 +201,13 @@ func main() {
 		for _, key := range resp.Contents {
 			log.Printf(*key.Key)
 			if strings.Contains(*key.Key, prefix+date) {
+				// if we still have available goroutine in the pool (out of concurrency )
+				sem <- true
 				wg.Add(1)
-				go processSingleDownload(*key.Key, &wg)
+				go func(key string) {
+					defer func() { <-sem }()
+					processSingleDownload(key, &wg)
+				}(*key.Key)
 			}
 		}
 
@@ -197,6 +216,11 @@ func main() {
 	if verbose {
 		log.Println("All files sent to be downloaded. Waiting for completetion...")
 	}
+
+	for i := 0; i < cap(sem); i++ {
+		sem <- true
+	}
+
 	wg.Wait()
 	if verbose {
 		log.Println("All download jobs completed, closing failed/succeeded jobs channel")
@@ -204,7 +228,10 @@ func main() {
 	close(failedFilesChan)
 	close(downloadedReportChannel)
 	ReportFailedFiles(failedFilesList)
-	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloaded, time.Since(startTime))
+	dwnldMu.Lock()
+	downloadedVal := downloaded
+	dwnldMu.Unlock()
+	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloadedVal, time.Since(startTime))
 }
 
 func ReportFailedFiles(failedFilesList []string) {
