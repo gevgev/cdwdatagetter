@@ -60,7 +60,7 @@ if [ "$#" == 11 ]; then
 else
     as_of=`date +"%Y%m%d"`
 fi 
-
+ 
 #sp providers are listed as codes: 
 #8000200  (blueridge palmerton)
 #8000150  (panhandle guymon)
@@ -176,3 +176,6 @@ done
 
 echo " cdw data downloader has finished downloading files. "
 echo " cdw data downloader has finished downloading files. " >> $data_downloader_status_log_dir/cdw-data-downloader.log
+
+#echo " Pushing to AWS S3"
+#AWS_ACCESS_KEY_ID="$access_key2" AWS_SECRET_ACCESS_KEY="$access_secret2" ./aws-s3-uploader -p "$output_files_dir"

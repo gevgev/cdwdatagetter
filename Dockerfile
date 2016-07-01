@@ -26,6 +26,7 @@ RUN apt-get install -y bzip2
 #RUN $HOME/aws/env/bin/aws
 
 ADD cdwdatagetter cdwdatagetter 
+ADD aws-s3-uploader aws-s3-uploader
 ADD run-ubuntu.sh run-ubuntu.sh
 ADD mso-list.csv mso-list.csv
 
