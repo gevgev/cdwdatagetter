@@ -177,5 +177,6 @@ done
 echo " cdw data downloader has finished downloading files. "
 echo " cdw data downloader has finished downloading files. " >> $data_downloader_status_log_dir/cdw-data-downloader.log
 
-#echo " Pushing to AWS S3"
-#AWS_ACCESS_KEY_ID="$access_key2" AWS_SECRET_ACCESS_KEY="$access_secret2" ./aws-s3-uploader -p "$output_files_dir"
+# aws-s3-uploader will use the EC2 role to access daap-hh-count s3 bucket
+echo " Pushing to AWS S3"
+./aws-s3-uploader -p "$output_files_dir" -b daap-hh-count
