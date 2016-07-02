@@ -24,6 +24,7 @@ fi
 echo "Copying script and mso list"
 cp ../run-2-ubuntu.sh run-ubuntu.sh
 cp ../mso-list-full.csv mso-list.csv
+cp ../loop.sh loop.sh
 
 echo "Archiving"
 

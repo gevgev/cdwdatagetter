@@ -156,3 +156,10 @@ echo " cdw data downloader has finished downloading files. " >> $data_downloader
 # aws-s3-uploader will use the EC2 role to access daap-hh-count s3 bucket
 echo " Pushing to AWS S3"
 ./aws-s3-uploader -p "$output_files_dir" -b daap-hh-count
+
+echo " Clean everything"
+rm -fr cdw-data-reports/
+rm -fr cdw_downloads_logs/
+rm -fr event/
+rm -fr input_compressed_cdw_data
+

@@ -11,3 +11,4 @@ event/
 cdw-data-reports/
 test-array.sh
 build/
+loop.sh
