@@ -22,7 +22,7 @@ rc=$?; if [[ $rc != 0 ]]; then
 fi
 
 echo "Copying script and mso list"
-cp ../run-ubuntu.sh .
+cp ../run-2-ubuntu.sh run-ubuntu.sh
 cp ../mso-list-full.csv mso-list.csv
 
 echo "Archiving"

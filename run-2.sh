@@ -73,11 +73,6 @@ fi
 #  It will be ultimate to map code to provider name
 # may be to do in the future.
 
-if [ ! -f  $data_downloader_activity_tracker_file ]
-then
-   touch $data_downloader_activity_tracker_file;
-fi
-
 # 4000002, HTC
 # 4000011, Mediacom-Des Moines
 # 4000012, Mediacom-Moline
@@ -110,27 +105,13 @@ AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$access_secret" ./cdwdata
 
 for provider in "${arr[@]}"
     do
-    
+        # get the latest file in the latest subdirectory for that provider
+    FILES="$base_folder/$provider/delta/*/*"
     # get the latest file in the latest subdirectory for that provider
-    for file in `ls -lad $base_folder/$provider/delta/*/* | awk -F ' '  ' { print $9 } ' | sort -r | head -1 `
+    for file in $FILES
         do  
 
-            # check if file has been pulled before then don't not process
-            if grep -q ${file} "$data_downloader_activity_tracker_file"; then
-                echo " found file has been processed before  ${file}" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-                echo " found file has been processed before  ${file}"
-                continue;
-            fi
-
-            echo " $(date). Getting file ${file}" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-            echo " $(date). Getting file ${file}"
-
-            # add the entry to the tracker and date
-            echo " $(date)   ${file}" >>  $data_downloader_activity_tracker_file;
-
             # uncompress the the tv_viewership.cod.bz2 file
-            # need to give the new path to the downloaded file
-
 
             gunzip -f ${file}
             # replace all Control A with Diamnonds
@@ -162,11 +143,9 @@ for provider in "${arr[@]}"
             rm  $data_download_destination/$diamonds_delimited_filename
 
         done
+    echo " cdw data downloader has finished processing the newest file ${file} for $provider  "
+    echo " cdw data downloader has finished processing newest file: ${file}  for $provider" >> $data_downloader_status_log_dir/cdw-data-downloader.log
 
-        echo " cdw data downloader has finished processing the newest file ${file} for $provider  "
-        echo " cdw data downloader has finished processing newest file: ${file}  for $provider" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-
-        sleep 1
 done
 
 echo " cdw data downloader has finished downloading files. "
