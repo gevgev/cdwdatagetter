@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"sync"
 	"time"
 
@@ -200,7 +200,10 @@ func main() {
 		log.Println("Files:")
 		for _, key := range resp.Contents {
 			log.Printf(*key.Key)
-			if strings.Contains(*key.Key, prefix+date) {
+			regexStr := fmt.Sprintf("%s/[0-9]*/delta/[0-9]*-[0-9]*_%s/.*", prefixPath, date)
+			regex := regexp.MustCompile(regexStr)
+
+			if regex.Match([]byte(*key.Key)) {
 				// if we still have available goroutine in the pool (out of concurrency )
 				sem <- true
 				wg.Add(1)
