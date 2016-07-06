@@ -133,7 +133,7 @@ for provider in "${arr[@]}"
             echo "HH_ID, Unit_ID, Event_Timestamp, End_Event_Timestamp, Name, channel_name, Event_Type, zipcode, country" >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
             # convert the diamonds into pipes and filter out the lines with soft power off. only the "channel tune" events will be in the output.
-            awk 'BEGIN{FS="<>"; OFS="|"} $13 == "channel tune" { print $25, $39, $14, $15, $93, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
+            awk 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $39, $14, $15, $93, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
             # change the channel tune value to watch. (preserve the original in *.bak)
             LANG=C sed -i .bak 's/channel tune/watch/g' $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 

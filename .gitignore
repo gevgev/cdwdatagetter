@@ -14,3 +14,4 @@ build/
 loop.sh
 aws-s3-uploader
 viewership/build-viewership/
+viewership/loop-viewership.sh
