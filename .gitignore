@@ -13,3 +13,4 @@ test-array.sh
 build/
 loop.sh
 aws-s3-uploader
+viewership/build-viewership/

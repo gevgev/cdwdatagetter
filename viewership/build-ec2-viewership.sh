@@ -1,9 +1,7 @@
 #!/bin/sh
 set -x
 
-exit 
-
-#cd build
+cd build-viewership/
 
 echo "Build cdwdatagetter"
 GOOS=linux go build -v github.com/gevgev/cdwdatagetter
@@ -24,13 +22,13 @@ rc=$?; if [[ $rc != 0 ]]; then
 fi
 
 echo "Copying script and mso list"
-cp ../run-2-ubuntu.sh run-ubuntu.sh
-cp ../mso-list-full.csv mso-list.csv
-cp ../loop.sh loop.sh
+cp ../run-viewership-ubuntu.sh run-viewership-ubuntu.sh
+cp ../../mso-list-full.csv mso-list.csv
+cp ../loop-viewership.sh loop-viewership.sh
 
 echo "Archiving"
 
-zip archive.zip *
+zip archive-viewership.zip *
 
 echo 'Success'
 cd ..

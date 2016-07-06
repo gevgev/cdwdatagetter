@@ -136,6 +136,10 @@ for provider in "${arr[@]}"
             awk 'BEGIN{FS="<>"; OFS="|"} $13 == "channel tune" { print $25, $39, $14, $15, $93, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
             # change the channel tune value to watch. (preserve the original in *.bak)
             LANG=C sed -i .bak 's/channel tune/watch/g' $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
+
+            echo " deleting processed file $data_download_destination/$diamonds_delimited_filename after getting viewership reports for $provider on $as_of "
+            rm  $data_download_destination/$diamonds_delimited_filename
+
         done
     echo " cdw data downloader has finished processing the newest file ${file} for $provider  "
     echo " cdw data downloader has finished processing newest file: ${file}  for $provider" >> $data_downloader_status_log_dir/cdw-data-downloader.log
@@ -144,3 +148,14 @@ done
 
 echo " cdw data downloader has finished downloading files. "
 echo " cdw data downloader has finished downloading files. " >> $data_downloader_status_log_dir/cdw-data-downloader.log
+
+# aws-s3-uploader will use the EC2 role to access daap-hh-count s3 bucket
+#echo " Pushing to AWS S3"
+#./aws-s3-uploader -p "$output_files_dir" -b daap-hh-count
+
+echo " Clean everything"
+rm -fr "$output_files_dir"
+rm -fr "$data_downloader_status_log_dir"
+rm -fr "$base_folder"
+rm -fr "$data_download_destination"
+

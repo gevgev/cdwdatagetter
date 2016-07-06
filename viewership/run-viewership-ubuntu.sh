@@ -1,8 +1,6 @@
 #!/bin/bash
 set -x
 
-exit 
-
 if [ "$#" -ne 10 -a "$#" -ne 11 ]; then
     echo "Error: Missing parameters:"
     echo "  AWS_access_key"
@@ -62,7 +60,7 @@ if [ "$#" == 11 ]; then
 else
     as_of=`date +"%Y%m%d"`
 fi 
- 
+
 #sp providers are listed as codes: 
 #8000200  (blueridge palmerton)
 #8000150  (panhandle guymon)
@@ -74,11 +72,6 @@ fi
 #4000002 (htc)
 #  It will be ultimate to map code to provider name
 # may be to do in the future.
-
-if [ ! -f  $data_downloader_activity_tracker_file ]
-then
-   touch $data_downloader_activity_tracker_file;
-fi
 
 # 4000002, HTC
 # 4000011, Mediacom-Des Moines
@@ -113,30 +106,13 @@ AWS_ACCESS_KEY_ID="$access_key" AWS_SECRET_ACCESS_KEY="$access_secret" ./cdwdata
 
 for provider in "${arr[@]}"
     do
-    
+        # get the latest file in the latest subdirectory for that provider
+    FILES="$base_folder/$provider/delta/*/*"
     # get the latest file in the latest subdirectory for that provider
-    for file in `ls -lad $base_folder/$provider/delta/*/* | awk -F ' '  ' { print $9 } ' | sort -r | head -1 `
+    for file in $FILES
         do  
 
-            # check if file has been pulled before then don't not process
-            if grep -q ${file} "$data_downloader_activity_tracker_file"; then
-                echo " found file has been processed before  ${file}" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-                echo " found file has been processed before  ${file}"
-                continue;
-            fi
-
-            echo " $(date). Getting file ${file}" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-            echo " $(date). Getting file ${file}"
-
-            # bring the raw compressed file into the desired location.  Not sure if this is the correct awscli command
-            # currently I brought the file to a local directories structure similar to the remote one on bucket rovi-cdw
-            #aws s3 cp  ${file} $data_download_destination/
-
-            # add the entry to the tracker and date
-            echo " $(date)   ${file}" >>  $data_downloader_activity_tracker_file;
-
             # uncompress the the tv_viewership.cod.bz2 file
-            # need to give the new path to the downloaded file
 
 
             bunzip2 -f ${file}
@@ -152,28 +128,24 @@ for provider in "${arr[@]}"
             chmod a+rw $output_files_dir/$as_of/$provider;
 
             # create the csv report file for a given provider
-            echo " creating csv file $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv"
-            touch $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
+            echo " creating csv file $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv"
+            touch $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
             # create the headings in the csv report file
-            echo "date, provider_code, hh_id_count" >> $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
+            echo "HH_ID, Unit_ID, Event_Timestamp, End_Event_Timestamp, Name, channel_name, Event_Type, zipcode, country" >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
-            # get unique household ids count when filtering other noise except channel tune events
-            count=`cat -v  $data_download_destination/$diamonds_delimited_filename | grep "channel tune" | awk -F '<>' ' { print $25 }' | sort | uniq | wc -l `
-            echo " count was completed for $provider ,$count"
+            # convert the diamonds into pipes and filter out the lines with soft power off. only the "channel tune" events will be in the output.
+            awk 'BEGIN{FS="<>"; OFS="|"} $13 == "channel tune" { print $25, $39, $14, $15, $93, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
+            # change the channel tune value to watch. (preserve the original in *.bak)
+            LANG=C sed -i 's/channel tune/watch/g' $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
-            # write the result to csv report file
-            echo "$as_of,$provider,$count" >> $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
-
-            echo " deleting processed file $data_download_destination/$diamonds_delimited_filename after getting unique household ids count for $provider on $as_of "
+            echo " deleting processed file $data_download_destination/$diamonds_delimited_filename after getting viewership reports for $provider on $as_of "
             rm  $data_download_destination/$diamonds_delimited_filename
 
         done
+    echo " cdw data downloader has finished processing the newest file ${file} for $provider  "
+    echo " cdw data downloader has finished processing newest file: ${file}  for $provider" >> $data_downloader_status_log_dir/cdw-data-downloader.log
 
-        echo " cdw data downloader has finished processing the newest file ${file} for $provider  "
-        echo " cdw data downloader has finished processing newest file: ${file}  for $provider" >> $data_downloader_status_log_dir/cdw-data-downloader.log
-
-        sleep 1
 done
 
 echo " cdw data downloader has finished downloading files. "
@@ -181,4 +153,11 @@ echo " cdw data downloader has finished downloading files. " >> $data_downloader
 
 # aws-s3-uploader will use the EC2 role to access daap-hh-count s3 bucket
 echo " Pushing to AWS S3"
-./aws-s3-uploader -p "$output_files_dir" -b daap-hh-count
+./aws-s3-uploader -p "$output_files_dir" -b daap-viewership-reports
+
+echo " Clean everything"
+rm -fr "$output_files_dir"
+rm -fr "$data_downloader_status_log_dir"
+rm -fr "$base_folder"
+rm -fr "$data_download_destination"
+
