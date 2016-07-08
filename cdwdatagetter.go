@@ -124,11 +124,11 @@ func formatPrefix(path, msoCode string) string {
 var (
 	failedFilesChan         chan string
 	downloadedReportChannel chan bool
-	dwnldMu                 sync.Mutex
 )
 
 func main() {
 	startTime := time.Now()
+	countingDone := make(chan bool)
 
 	// This is our semaphore/pool
 	sem := make(chan bool, concurrency)
@@ -158,10 +158,9 @@ func main() {
 		for {
 			_, more := <-downloadedReportChannel
 			if more {
-				dwnldMu.Lock()
 				downloaded++
-				dwnldMu.Unlock()
 			} else {
+				countingDone <- true
 				return
 			}
 		}
@@ -230,10 +229,10 @@ func main() {
 	}
 	close(failedFilesChan)
 	close(downloadedReportChannel)
+	// Wait until counting of downloaded files is complete
+	<-countingDone
 	ReportFailedFiles(failedFilesList)
-	dwnldMu.Lock()
 	downloadedVal := downloaded
-	dwnldMu.Unlock()
 	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloadedVal, time.Since(startTime))
 }
 
