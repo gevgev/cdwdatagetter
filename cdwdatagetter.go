@@ -159,8 +159,9 @@ func main() {
 	go func() {
 		for {
 			_, more := <-downloadedReportChannel
-			downloaded++
-			if !more {
+			if more {
+				downloaded++
+			} else {
 				countingDone <- true
 				return
 			}
