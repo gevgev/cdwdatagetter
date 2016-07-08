@@ -79,6 +79,7 @@ func usage() {
 	os.Exit(-1)
 }
 
+// PrintParams prints the input parameters
 func PrintParams() {
 	log.Printf("Provided: -r: %s, -b: %s, -d: %v, -m %s, -p %s, -M %d, -v: %v\n",
 		regionName,
@@ -92,6 +93,7 @@ func PrintParams() {
 
 }
 
+// MsoType struct represents an Mso with Code/Name
 type MsoType struct {
 	Code string
 	Name string
@@ -157,9 +159,8 @@ func main() {
 	go func() {
 		for {
 			_, more := <-downloadedReportChannel
-			if more {
-				downloaded++
-			} else {
+			downloaded++
+			if !more {
 				countingDone <- true
 				return
 			}
@@ -236,6 +237,7 @@ func main() {
 	log.Printf("Processed %d MSO's, %d files, in %v\n", len(msoList), downloadedVal, time.Since(startTime))
 }
 
+// ReportFailedFiles will print the list of failed to download files
 func ReportFailedFiles(failedFilesList []string) {
 	if len(failedFilesList) > 0 {
 		for _, key := range failedFilesList {
@@ -256,12 +258,13 @@ func processSingleDownload(key string, wg *sync.WaitGroup) {
 			}
 			downloadedReportChannel <- true
 			return
-		} else {
-			if verbose {
-				log.Println("Failed, going to sleep for: ", key)
-			}
-			time.Sleep(time.Duration(10) * time.Second)
 		}
+
+		if verbose {
+			log.Println("Failed, going to sleep for: ", key)
+		}
+		time.Sleep(time.Duration(10) * time.Second)
+
 	}
 	failedFilesChan <- key
 }
