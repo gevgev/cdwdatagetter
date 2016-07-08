@@ -130,7 +130,7 @@ for provider in "${arr[@]}"
             touch $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
             # create the headings in the csv report file
-            echo "hh_id, ts, pg_id, pr_name, ch_num, ch_name, event, zipcode, country" > $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
+            echo "hh_id, ts, pg_id, pg_name, ch_num, ch_name, event, zipcode, country" > $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
 
             # convert the diamonds into pipes and filter out the lines with soft power off. only the "channel tune" events will be in the output.
             # awk q=\' 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $39, $14, $15, $93, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
