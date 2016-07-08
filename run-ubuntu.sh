@@ -154,7 +154,7 @@ for provider in "${arr[@]}"
             touch $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
 
             # create the headings in the csv report file
-            echo "date, provider_code, hh_id_count" >> $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
+            echo "date, provider_code, hh_id_count" > $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
 
             # get unique household ids count when filtering other noise except channel tune events
             count=`cat -v  $data_download_destination/$diamonds_delimited_filename | grep "channel tune" | awk -F '<>' ' { print $25 }' | sort | uniq | wc -l `

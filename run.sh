@@ -156,7 +156,7 @@ for provider in "${arr[@]}"
             echo " count was completed for $provider ,$count"
 
             # write the result to csv report file
-            echo "$as_of,$provider,$count" >> $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
+            echo "$as_of,$provider,$count" > $output_files_dir/$as_of/$provider/hhid_count-$provider-$as_of.csv
 
             echo " deleting processed file $data_download_destination/$diamonds_delimited_filename after getting unique household ids count for $provider on $as_of "
             rm  $data_download_destination/$diamonds_delimited_filename
