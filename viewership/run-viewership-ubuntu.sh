@@ -136,7 +136,7 @@ for provider in "${arr[@]}"
 
             # convert the diamonds into pipes and filter out the lines with soft power off. only the "channel tune" events will be in the output.
             #awk -v q=\" 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $39, $14, $15, q $93 q, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
-            awk -v 'q='\''' 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $39, $14, $15, "\""$93"\"", $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
+            #awk -v 'q='\''' 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $39, $14, $15, "\""$93"\"", $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
             awk -v 'q='\''' 'BEGIN{FS="<>"; OFS=","} $13 == "channel tune" { print $25, $14, $91, "\""$93"\"", $70, $63, $13, $35, $34}' $data_download_destination/$diamonds_delimited_filename >> $output_files_dir/$as_of/$provider/tv_viewership-$provider-$as_of.csv
             
             # change the channel tune value to watch. (preserve the original in *.bak)

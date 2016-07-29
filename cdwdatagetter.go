@@ -203,8 +203,8 @@ func main() {
 			log.Printf(*key.Key)
 			regexStr := fmt.Sprintf("%s/[0-9]*/delta/[0-9]*-[0-9]*_%s/.*", prefixPath, date)
 			regex := regexp.MustCompile(regexStr)
-
-			if regex.Match([]byte(*key.Key)) {
+			// Download the matched files, only if the size is >14 bytes
+			if regex.Match([]byte(*key.Key)) && *key.Size > 14 {
 				// if we still have available goroutine in the pool (out of concurrency )
 				sem <- true
 				wg.Add(1)
